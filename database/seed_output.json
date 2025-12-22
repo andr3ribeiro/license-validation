@@ -1,0 +1,23 @@
+{
+    "rankmath": {
+        "brand_id": "f6b16578-20c9-4b86-b6cc-7afb77f1c81f",
+        "api_key_brand": "sk_fab6ba8f61b16c87cf0e9b0babfb5bcceed6a15d9accf7304553280d167197d9",
+        "api_key_product": "sk_5d006a8b46b62823d05298a23bdced8b89e5b9f7ca5bbf3d8e511ebe8bf3da82",
+        "products": {
+            "rankmath-pro": "41da008a-1026-4ca2-aeed-9f0ba22ba2b3",
+            "content-ai": "62cce695-5b2c-4d91-a728-552ad59785ab"
+        },
+        "license_key": "RANK-2025-9D913A553105",
+        "license_key_id": "a101c350-7479-4c93-900f-839ca508b461"
+    },
+    "wp-rocket": {
+        "brand_id": "298519c9-d0bb-44d4-b580-49b745af2eb4",
+        "api_key_brand": "sk_313400e8a091e4b0a495aad2c002a020e4cad431cbb50bb3f53b3a91ace14a20",
+        "api_key_product": "sk_d8bd5b04706b02ce773acd3228db462adabbbb8c992af6da5976b1c6fb1a33d6",
+        "products": {
+            "wp-rocket": "b4ea40e8-5f3d-41be-9aaa-9da5b584293b"
+        },
+        "license_key": "WPRO-2025-EFB28D74B9F2",
+        "license_key_id": "83463130-284f-4274-8b3f-a33fc9a25572"
+    }
+}

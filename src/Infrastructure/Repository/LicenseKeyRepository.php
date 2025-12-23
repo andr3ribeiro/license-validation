@@ -30,6 +30,11 @@ interface LicenseKeyRepository
     public function findByBrandAndCustomerEmail(string $brandId, string $customerEmail): array;
 
     /**
+     * Find all license keys by customer email (across all brands)
+     */
+    public function findByCustomerEmail(string $customerEmail): array;
+
+    /**
      * Get all license keys for a brand
      */
     public function findByBrandId(string $brandId): array;

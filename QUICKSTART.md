@@ -133,6 +133,32 @@ The test script demonstrates:
 - Validating licenses via Product API (US4)
 - Viewing seat limits and expiration dates (US4)
 - Blocking activations that exceed seat limits (US3)
+- Querying licenses by email across brands (US6)
+
+### User Story 6: Cross-Brand License Lookup
+
+**Test US6 - Query licenses by customer email across all brands:**
+
+```bash
+curl "http://localhost:8080/api/v1/licenses/by-email?email=testuser@example.com" \
+  -H "Authorization: Bearer {brand_api_key}"
+```
+
+**Response includes:**
+- All license keys for the email across all brands
+- Each key's associated licenses and products
+- Brand IDs showing which brands issued each key
+- Seat limits and expiration dates
+
+**Security:**
+- Requires Brand API authentication
+- Only authenticated brands can access
+- End users cannot access this endpoint
+
+**Use cases:**
+- Customer support: View all customer licenses in one query
+- Account management: See complete customer license portfolio
+- Cross-brand analytics: Understand customer product adoption
 
 ## Next Steps
 

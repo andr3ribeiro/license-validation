@@ -256,6 +256,39 @@ curl -X POST http://localhost:8080/api/v1/products/validate \
   -H "Content-Type: application/json" \
   -d '{"license_key": "KEY", "product_id": "PRODUCT_ID"}'
 ```
+
+### User Story 6: Cross-Brand License Lookup ✓
+See DESIGN.md and test-api.sh for full details:
+- Brands can query all licenses for a customer email across all brands
+- Single API endpoint returns comprehensive customer license portfolio
+- Key features:
+  - Query by customer email: `GET /api/v1/licenses/by-email?email={email}`
+  - Returns all license keys across all brands
+  - Includes all associated licenses and products
+  - Shows brand IDs, seat limits, expiration dates
+- Security:
+  - Requires Brand API authentication
+  - Only authenticated brands can access
+  - End users and external parties blocked
+- Use cases:
+  - Customer support operations
+  - Account management
+  - Cross-brand analytics
+- Test coverage in test-api.sh demonstrating:
+  - Querying licenses across multiple brands (RankMath + WP Rocket)
+  - Viewing complete customer license portfolio
+  - Brand-authenticated access control
+
+**How to test US6:**
+```bash
+# Run the full test suite
+./test-api.sh
+
+# Or query manually:
+curl "http://localhost:8080/api/v1/licenses/by-email?email=customer@example.com" \
+  -H "Authorization: Bearer {brand_api_key}"
+```
+
 ## Future Enhancements (Designed but not implemented)
 
 See DESIGN.md for full details:

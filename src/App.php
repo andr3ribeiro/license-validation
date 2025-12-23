@@ -118,6 +118,12 @@ class App
             [$this->brandController, 'updateLicense']
         );
 
+        // US6: List licenses by customer email (cross-brand)
+        $this->router->get(
+            '/api/v1/licenses/by-email',
+            [$this->brandController, 'getLicenseKeysByEmail']
+        );
+
         // Product APIs
         $this->router->post(
             '/api/v1/products/validate',

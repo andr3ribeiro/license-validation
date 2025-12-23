@@ -208,4 +208,16 @@ class LicenseKeyService
 
         return substr($acronym, 0, 4);
     }
+
+    /**
+     * Get all license keys by customer email across all brands
+     * 
+     * This supports US6: Brands can list licenses by customer email across all brands
+     * 
+     * @return array Array of license keys
+     */
+    public function getLicenseKeysByCustomerEmail(string $customerEmail): array
+    {
+        return $this->licenseKeyRepo->findByCustomerEmail($customerEmail);
+    }
 }

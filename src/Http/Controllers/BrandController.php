@@ -231,6 +231,52 @@ class BrandController extends Controller
     }
 
     /**
+     * GET /api/v1/licenses/by-email?email={email}
+     * Get all license keys for a customer email across all brands
+     *
+     * Supports US6: Brands can list licenses by customer email across all brands
+     */
+    public function getLicenseKeysByEmail(): void
+    {
+        // Authenticate brand (only brands can access this)
+        $this->authenticateBrand();
+
+        $email = $_GET['email'] ?? null;
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->errorResponse('INVALID_EMAIL', 'Invalid or missing email parameter');
+            return;
+        }
+
+        try {
+            $licenseKeys = $this->licenseKeyService->getLicenseKeysByCustomerEmail($email);
+
+            // Build response with licenses for each key
+            $response = array_map(function($licenseKey) {
+                $licenses = $this->licenseService->getLicensesByKey($licenseKey->getId());
+
+                return [
+                    'id' => $licenseKey->getId(),
+                    'key' => $licenseKey->getKey(),
+                    'brand_id' => $licenseKey->getBrandId(),
+                    'customer_email' => $licenseKey->getCustomerEmail(),
+                    'status' => $licenseKey->getStatus(),
+                    'licenses' => $licenses,
+                    'created_at' => $licenseKey->getCreatedAt()->format(\DateTime::ISO8601),
+                ];
+            }, $licenseKeys);
+
+            $this->jsonResponse([
+                'email' => $email,
+                'total_license_keys' => count($licenseKeys),
+                'license_keys' => $response
+            ]);
+        } catch (\Exception $e) {
+            $this->errorResponse('ERROR', $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Validate that the authenticated brand owns this brand ID
      */
     private function validateBrandAccess(string $brandId): void

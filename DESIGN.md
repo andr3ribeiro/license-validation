@@ -380,7 +380,53 @@ Note: This endpoint supports User Story 4 (US4) - checking license status and en
 Returns all licenses associated with a key, including seat limits and expiration dates.
 ```
 
-#### 4. Suspend/Reactivate License
+#### 4. Get Licenses by Customer Email (Cross-Brand)
+```
+GET /api/v1/licenses/by-email?email={email}
+Authorization: Bearer {api_key_brand}
+
+Response (200):
+{
+  "email": "john@example.com",
+  "total_license_keys": 2,
+  "license_keys": [
+    {
+      "id": "uuid",
+      "key": "RANK-2025-ABC123...",
+      "brand_id": "rankmath-brand-id",
+      "customer_email": "john@example.com",
+      "status": "active",
+      "licenses": [
+        {
+          "id": "license-uuid",
+          "product_id": "product-uuid",
+          "product_name": "RankMath Pro",
+          "status": "valid",
+          "seat_limit": 5,
+          "expires_at": "2026-12-22T00:00:00Z",
+          "activated_at": "2025-12-22T10:00:00Z"
+        }
+      ],
+      "created_at": "2025-12-22T10:00:00Z"
+    },
+    {
+      "id": "uuid2",
+      "key": "WPRK-2025-XYZ789...",
+      "brand_id": "wprocket-brand-id",
+      "customer_email": "john@example.com",
+      "status": "active",
+      "licenses": [...],
+      "created_at": "2025-12-22T11:00:00Z"
+    }
+  ]
+}
+
+Note: This endpoint supports User Story 6 (US6) - cross-brand license lookup.
+Returns ALL license keys for a customer email across all brands in the ecosystem.
+Only accessible by authenticated brands (requires Brand API key).
+```
+
+#### 5. Suspend/Reactivate License
 ```
 PATCH /api/v1/brands/{brand_id}/licenses/{license_id}
 Authorization: Bearer {api_key_brand}
@@ -582,6 +628,38 @@ Brand: WP Rocket
 
 #### User Story 4: Check license status and entitlements - IMPLEMENTED
 - End-users and products can check the status and entitlements of a license key.
+- Brand API endpoint `GET /api/v1/brands/{brand_id}/license-keys/{license_key_id}` returns comprehensive license information.
+- Product API endpoint `POST /api/v1/products/validate` validates licenses and returns status/entitlements.
+- Information provided:
+  - License validity status (valid, suspended, cancelled, expired)
+  - Product entitlements (which products the key grants access to)
+  - Seat limits (if configured)
+  - Expiration dates
+  - Activation timestamps
+- Test coverage in test-api.sh demonstrates:
+  - Checking license status before and after activations
+  - Validating licenses via Product API
+  - Viewing seat limits in license details
+
+#### User Story 6: Cross-brand license lookup - IMPLEMENTED
+- Brands can list all licenses associated with a given email across the entire ecosystem.
+- API endpoint `GET /api/v1/licenses/by-email?email={email}` returns all license keys for a customer.
+- Returns comprehensive information across all brands:
+  - All license keys for the email
+  - Each key's associated licenses and products
+  - Brand IDs showing which brands issued each key
+  - Seat limits, expiration dates, and activation status
+- Security:
+  - Requires Brand API authentication (Brand API key)
+  - Only authenticated brands can access this endpoint
+  - End users and external parties cannot access this data
+- Use cases:
+  - Customer support: view all customer licenses in one query
+  - Account management: see complete customer license portfolio
+  - Cross-brand analytics: understand customer product adoption
+- Test coverage in test-api.sh demonstrates querying licenses across RankMath and WP Rocket brands
+
+### Planned Features (Designed but not implemented)
 - Brand API endpoint `GET /api/v1/brands/{brand_id}/license-keys/{license_key_id}` returns comprehensive license information.
 - Product API endpoint `POST /api/v1/products/validate` validates licenses and returns status/entitlements.
 - Information provided:

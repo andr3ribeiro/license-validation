@@ -32,6 +32,11 @@ A production-ready multi-tenant license service built with pure PHP OO, no frame
   - View license status, expiration dates, and seat limits
   - Check remaining seats available for activation
   - Validate license in real-time via Product API
+- **Cross-brand license lookup (User Story 6)**: Query licenses by customer email
+  - Brands can list all licenses for a customer email across all brands
+  - Comprehensive view of customer's license portfolio
+  - Includes all products, seat limits, and expiration dates
+  - Secured with Brand API authentication only
 
 ### Designed (Future Extensions)
 - Feature flags per license
@@ -478,6 +483,44 @@ The test demonstrates:
 - Checking license details after seat activations
 - Viewing remaining seats available
 
+### User Story US6: Cross-Brand License Lookup
+
+**How to query licenses by customer email across all brands:**
+
+```bash
+curl "http://localhost:8080/api/v1/licenses/by-email?email=customer@example.com" \
+  -H "Authorization: Bearer {brand_api_key}"
+```
+
+**Response includes:**
+- All license keys for the customer (across all brands)
+- Each key's associated licenses and products
+- Brand IDs for each license key
+- Seat limits and expiration dates
+- Activation timestamps
+
+**Security:**
+- Requires Brand API authentication
+- Only authenticated brands can access this endpoint
+- End users and external parties cannot access this data
+
+**Use cases:**
+- Customer support: View all customer licenses in one query
+- Account management: See complete customer license portfolio
+- Cross-brand analytics: Understand customer product adoption
+
+**Testing US6:**
+
+Run the test script to see US6 in action:
+```bash
+./test-api.sh
+```
+
+The test demonstrates querying licenses for `testuser@example.com` which returns:
+- RankMath license key with RankMath Pro and Content AI licenses
+- WP Rocket license key with WP Rocket license
+- All details for each license including seat limits
+
 ### User Story US1 Implementation
 
 The system fully implements US1 as described:
@@ -532,11 +575,11 @@ POST /api/v1/brands/{wprocket_id}/licenses
 **Why**: Demonstrates understanding of core PHP concepts, OOP principles, and system design without framework abstractions.
 
 **Trade-offs**:
-- [V] Full control over architecture
-- [V] No framework overhead
-- [V] Educational value
-- [X] More boilerplate code
-- [X] Need manual implementation of routing, DI, etc.
+- [X] Full control over architecture
+- [X] No framework overhead
+- [X] Educational value
+- [ ] More boilerplate code
+- [ ] Need manual implementation of routing, DI, etc.
 
 ### 2. Interface-Based Repositories
 

@@ -69,6 +69,16 @@ class LicenseKeyRepositoryImpl implements LicenseKeyRepositoryInterface
         return array_map(fn($row) => $this->hydrate($row), $results);
     }
 
+    public function findByCustomerEmail(string $customerEmail): array
+    {
+        $results = $this->db->query(
+            "SELECT * FROM license_keys WHERE customer_email = :customer_email ORDER BY created_at DESC",
+            [':customer_email' => $customerEmail]
+        )->fetchAll();
+
+        return array_map(fn($row) => $this->hydrate($row), $results);
+    }
+
     public function findByBrandId(string $brandId): array
     {
         $results = $this->db->query(

@@ -368,11 +368,16 @@ Response (200):
       "product_id": "product-uuid",
       "product_name": "RankMath Pro",
       "status": "valid",
-      "expires_at": "2026-12-22T00:00:00Z"
+      "seat_limit": 5,
+      "expires_at": "2026-12-22T00:00:00Z",
+      "activated_at": "2025-12-22T10:00:00Z"
     }
   ],
   "created_at": "2025-12-22T10:00:00Z"
 }
+
+Note: This endpoint supports User Story 4 (US4) - checking license status and entitlements.
+Returns all licenses associated with a key, including seat limits and expiration dates.
 ```
 
 #### 4. Suspend/Reactivate License
@@ -410,7 +415,8 @@ Response (200):
   "product_id": "product-uuid",
   "status": "valid",
   "expires_at": "2026-12-22T00:00:00Z",
-  "activated_at": "2025-12-22T10:00:00Z"
+  "activated_at": "2025-12-22T10:00:00Z",
+  "seat_limit": 5
 }
 
 Response (404/403):
@@ -418,6 +424,9 @@ Response (404/403):
   "valid": false,
   "message": "License not found or invalid"
 }
+
+Note: This endpoint supports User Story 4 (US4) - products can validate licenses
+and check entitlements including seat limits in real-time.
 ```
 
 #### 2. Activate License
@@ -569,6 +578,22 @@ Brand: WP Rocket
   - `seat_limit` stored as nullable integer in licenses table
   - `license_activations` table with UNIQUE constraint on (license_id, instance_id)
   - Duplicate activations for same instance are idempotent (upsert behavior)
+  - Seat counting logic counts DISTINCT instance_ids per license
+
+#### User Story 4: Check license status and entitlements - IMPLEMENTED
+- End-users and products can check the status and entitlements of a license key.
+- Brand API endpoint `GET /api/v1/brands/{brand_id}/license-keys/{license_key_id}` returns comprehensive license information.
+- Product API endpoint `POST /api/v1/products/validate` validates licenses and returns status/entitlements.
+- Information provided:
+  - License validity status (valid, suspended, cancelled, expired)
+  - Product entitlements (which products the key grants access to)
+  - Seat limits (if configured)
+  - Expiration dates
+  - Activation timestamps
+- Test coverage in test-api.sh demonstrates:
+  - Checking license status before and after activations
+  - Validating licenses via Product API
+  - Viewing seat limits in license details
   - Seat counting logic counts DISTINCT instance_ids per license
 
 ### Planned Features (Designed but not implemented)

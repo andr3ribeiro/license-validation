@@ -27,6 +27,11 @@ A production-ready multi-tenant license service built with pure PHP OO, no frame
   - Instance-based activation tracking (domain/website)
   - Automatic seat limit enforcement
   - Prevention of duplicate seat consumption for same instance
+- **License status checking (User Story 4)**: Check license status and entitlements
+  - Get license key details with all associated licenses
+  - View license status, expiration dates, and seat limits
+  - Check remaining seats available for activation
+  - Validate license in real-time via Product API
 
 ### Designed (Future Extensions)
 - Feature flags per license
@@ -422,6 +427,56 @@ curl -X POST http://localhost:8080/api/v1/brands/{brand_id}/licenses \
 curl http://localhost:8080/api/v1/brands/{brand_id}/license-keys/{license_key_id} \
   -H "Authorization: Bearer {brand_api_key}"
 ```
+
+### User Story US4: Check License Status
+
+**How to check license status and entitlements:**
+
+1. **Check license key details (Brand API)** - Returns all licenses and seat limits:
+```bash
+curl http://localhost:8080/api/v1/brands/{brand_id}/license-keys/{license_key_id} \
+  -H "Authorization: Bearer {brand_api_key}"
+```
+
+Response includes:
+- All associated licenses
+- Product names
+- License status (valid, suspended, cancelled, expired)
+- Seat limits (if configured)
+- Expiration dates
+- Activation timestamps
+
+2. **Validate license (Product API)** - Check if license is currently valid:
+```bash
+curl -X POST http://localhost:8080/api/v1/products/validate \
+  -H "Authorization: Bearer {product_api_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "RANK-2025-ABC123...",
+    "product_id": "{product_id}"
+  }'
+```
+
+Response includes:
+- `valid` (true/false)
+- License status
+- Expiration date
+- Seat limit (if configured)
+- Activated timestamp
+
+**Testing US4:**
+
+Run the test script to see US4 in action:
+```bash
+./test-api.sh
+```
+
+The test demonstrates:
+- Creating licenses with seat limits
+- Checking license details before activation
+- Validating licenses via Product API
+- Checking license details after seat activations
+- Viewing remaining seats available
 
 ### User Story US1 Implementation
 

@@ -99,6 +99,41 @@ curl -X POST http://localhost:8080/api/v1/products/validate \
 
 You now have a fully functional multi-tenant license service!
 
+## Testing User Stories
+
+### User Story 4: Check License Status
+
+**Test US4 - Check license status and entitlements:**
+
+1. **Check license key details (shows all licenses and seat limits):**
+```bash
+curl http://localhost:8080/api/v1/brands/{brand_id}/license-keys/{license_key_id} \
+  -H "Authorization: Bearer {brand_api_key}"
+```
+
+2. **Validate a license (check if valid and get entitlements):**
+```bash
+curl -X POST http://localhost:8080/api/v1/products/validate \
+  -H "Authorization: Bearer {product_api_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "license_key": "YOUR_LICENSE_KEY",
+    "product_id": "YOUR_PRODUCT_ID"
+  }'
+```
+
+3. **Run the complete test suite (includes US3 and US4 tests):**
+```bash
+./test-api.sh
+```
+
+The test script demonstrates:
+- Creating licenses with seat limits (US3)
+- Checking license status before/after activation (US4)
+- Validating licenses via Product API (US4)
+- Viewing seat limits and expiration dates (US4)
+- Blocking activations that exceed seat limits (US3)
+
 ## Next Steps
 
 - Read [README.md](README.md) for complete API documentation

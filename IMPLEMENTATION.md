@@ -2,7 +2,7 @@
 
 ## Implementation Status
 
-### Core Features (US1)
+### US1: Brand can provision a license
 
 The system successfully implements all requirements from User Story 1:
 
@@ -19,7 +19,7 @@ The system successfully implements all requirements from User Story 1:
 - Create NEW license key for different brand
 - WP Rocket uses separate key from RankMath
 
-### Planned (US3)
+### US3: End-user product can activate a license
 - End-user product activation per instance (e.g., website domain) that can consume a seat when seat limits are configured.
 - Service will enforce seat limits per license, rejecting activations beyond the allowed seats.
 
@@ -215,7 +215,7 @@ Result: License activated, timestamp recorded
 
 ## Implemented Features
 
-### User Story 3: Seat Management with Instance-based Activation ✓
+### User Story 3: Seat Management with Instance-based Activation
 See DESIGN.md and test-api.sh for full details:
 - Per-license configurable seat limits
 - Instance-based activation tracking (domain/website identifiers)
@@ -225,7 +225,37 @@ See DESIGN.md and test-api.sh for full details:
   - Creating licenses with seat_limit parameter
   - Activating multiple instances up to the limit
   - Blocking activations that exceed the limit
+### User Story 4: License Status Checking
+See DESIGN.md and test-api.sh for full details:
+- Check license status and entitlements via Brand API
+- Validate licenses in real-time via Product API
+- View comprehensive license information including:
+  - License validity status
+  - Product entitlements
+  - Seat limits (if configured)
+  - Expiration dates
+  - Activation timestamps
+- Test coverage in test-api.sh demonstrating:
+  - Getting license key details with all associated licenses
+  - Validating licenses before and after activation
+  - Checking seat limit information
 
+**How to test US4:**
+```bash
+# Run the full test suite
+./test-api.sh
+
+# Or check license status manually:
+# 1. Get license key details (Brand API)
+curl http://localhost:8080/api/v1/brands/{brand_id}/license-keys/{license_key_id} \
+  -H "Authorization: Bearer {brand_api_key}"
+
+# 2. Validate license (Product API)
+curl -X POST http://localhost:8080/api/v1/products/validate \
+  -H "Authorization: Bearer {product_api_key}" \
+  -H "Content-Type: application/json" \
+  -d '{"license_key": "KEY", "product_id": "PRODUCT_ID"}'
+```
 ## Future Enhancements (Designed but not implemented)
 
 See DESIGN.md for full details:

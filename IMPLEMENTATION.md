@@ -19,6 +19,10 @@ The system successfully implements all requirements from User Story 1:
 - Create NEW license key for different brand
 - WP Rocket uses separate key from RankMath
 
+### Planned (US3)
+- End-user product activation per instance (e.g., website domain) that can consume a seat when seat limits are configured.
+- Service will enforce seat limits per license, rejecting activations beyond the allowed seats.
+
 ## Architecture Implemented
 
 ### Domain Layer
@@ -209,10 +213,22 @@ Result: License activated, timestamp recorded
 5. **Extensible** - Easy to add seats, features, webhooks
 6. **Well-Documented** - README, DESIGN, inline comments
 
+## Implemented Features
+
+### User Story 3: Seat Management with Instance-based Activation ✓
+See DESIGN.md and test-api.sh for full details:
+- Per-license configurable seat limits
+- Instance-based activation tracking (domain/website identifiers)
+- Automatic seat limit enforcement with SeatLimitExceededException
+- Idempotent activation (duplicate instance_id doesn't consume extra seats)
+- Test coverage in test-api.sh demonstrating:
+  - Creating licenses with seat_limit parameter
+  - Activating multiple instances up to the limit
+  - Blocking activations that exceed the limit
+
 ## Future Enhancements (Designed but not implemented)
 
 See DESIGN.md for full details:
-- Seat management (multi-user licenses) (User Story 3)
 - Feature flags per license
 - Usage tracking and metrics
 - Webhook notifications

@@ -1,6 +1,6 @@
 -- Multi-Tenant License Service Database Schema
 -- Version: 1.0
-
+DROP DATABASE IF EXISTS license_service;
 CREATE DATABASE IF NOT EXISTS license_service CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE license_service;
 
@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS licenses (
     id VARCHAR(36) PRIMARY KEY,
     license_key_id VARCHAR(36) NOT NULL,
     product_id VARCHAR(36) NOT NULL,
+    seat_limit INT NULL,
     status ENUM('valid', 'suspended', 'cancelled', 'expired') DEFAULT 'valid',
     starts_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS licenses (
 CREATE TABLE IF NOT EXISTS license_activations (
     id VARCHAR(36) PRIMARY KEY,
     license_id VARCHAR(36) NOT NULL,
+    instance_id VARCHAR(255) NOT NULL,
     activated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     user_agent VARCHAR(500),
     ip_address VARCHAR(45),
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS license_activations (
     metadata JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (license_id) REFERENCES licenses(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_license_instance (license_id, instance_id),
     INDEX idx_license_id (license_id),
     INDEX idx_activated_at (activated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

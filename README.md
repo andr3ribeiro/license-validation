@@ -22,9 +22,13 @@ A production-ready multi-tenant license service built with pure PHP OO, no frame
 - **License lifecycle management**: Suspend, reactivate, or cancel licenses
 - **Brand management**: Register brands with separate provisioning and validation API keys
 - **Product management**: Define products per brand
+- **Seat management (User Story 3)**: End-user activation with seat limits
+  - Per-license seat limit configuration
+  - Instance-based activation tracking (domain/website)
+  - Automatic seat limit enforcement
+  - Prevention of duplicate seat consumption for same instance
 
 ### Designed (Future Extensions)
-- Seat management (multi-user licenses)
 - Feature flags per license
 - Usage tracking and analytics
 - Webhook notifications
@@ -237,7 +241,7 @@ Content-Type: application/json
   "status": "valid",
   "starts_at": "2025-12-22T00:00:00+00:00",
   "expires_at": "2026-12-22T00:00:00+00:00",
-  "activated_at": null, // because create run before activation
+  "activated_at": null,
   "created_at": "2025-12-22T10:00:00+00:00"
 }
 ```

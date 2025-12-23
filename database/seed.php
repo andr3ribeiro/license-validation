@@ -102,7 +102,8 @@ try {
             $licenseKey1->getId(),
             $rankMathPro->getId(),
             new DateTime('now'),
-            new DateTime('+1 year')
+            new DateTime('+1 year'),
+            null // unlimited seats
         );
     } catch (App\Domain\DuplicateLicenseException $e) {
         $license1 = $licenseService->getLicenseByKeyAndProduct($licenseKey1->getId(), $rankMathPro->getId());
@@ -119,7 +120,8 @@ try {
             $licenseKey1->getId(),
             $contentAi->getId(),
             new DateTime('now'),
-            new DateTime('+1 year')
+            new DateTime('+1 year'),
+            3 // sample seat limit for Content AI
         );
     } catch (App\Domain\DuplicateLicenseException $e) {
         $license2 = $licenseService->getLicenseByKeyAndProduct($licenseKey1->getId(), $contentAi->getId());
@@ -148,7 +150,8 @@ try {
             $licenseKey2->getId(),
             $wpRocketPlugin->getId(),
             new DateTime('now'),
-            new DateTime('+1 year')
+            new DateTime('+1 year'),
+            1 // enforce single-seat activation for WP Rocket
         );
     } catch (App\Domain\DuplicateLicenseException $e) {
         $license3 = $licenseService->getLicenseByKeyAndProduct($licenseKey2->getId(), $wpRocketPlugin->getId());

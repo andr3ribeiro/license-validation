@@ -21,16 +21,18 @@ class LicenseRepositoryImpl implements LicenseRepositoryInterface
     public function save(License $license): void
     {
         $this->db->query(
-            "INSERT INTO licenses (id, license_key_id, product_id, status, starts_at, expires_at, activated_at, created_at, updated_at) 
-             VALUES (:id, :license_key_id, :product_id, :status, :starts_at, :expires_at, :activated_at, :created_at, :updated_at)
-             ON DUPLICATE KEY UPDATE 
-             status = VALUES(status), 
-             activated_at = VALUES(activated_at), 
+            "INSERT INTO licenses (id, license_key_id, product_id, seat_limit, status, starts_at, expires_at, activated_at, created_at, updated_at)
+             VALUES (:id, :license_key_id, :product_id, :seat_limit, :status, :starts_at, :expires_at, :activated_at, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE
+             status = VALUES(status),
+             seat_limit = VALUES(seat_limit),
+             activated_at = VALUES(activated_at),
              updated_at = VALUES(updated_at)",
             [
                 ':id' => $license->getId(),
                 ':license_key_id' => $license->getLicenseKeyId(),
                 ':product_id' => $license->getProductId(),
+                ':seat_limit' => $license->getSeatLimit(),
                 ':status' => $license->getStatus(),
                 ':starts_at' => $license->getStartsAt()->format('Y-m-d H:i:s'),
                 ':expires_at' => $license->getExpiresAt()->format('Y-m-d H:i:s'),
@@ -84,8 +86,8 @@ class LicenseRepositoryImpl implements LicenseRepositoryInterface
     public function findValidByBrandId(string $brandId): array
     {
         $results = $this->db->query(
-            "SELECT l.* FROM licenses l 
-             INNER JOIN license_keys lk ON l.license_key_id = lk.id 
+            "SELECT l.* FROM licenses l
+             INNER JOIN license_keys lk ON l.license_key_id = lk.id
              WHERE lk.brand_id = :brand_id AND l.status IN ('valid', 'suspended')
              ORDER BY l.created_at DESC",
             [':brand_id' => $brandId]
@@ -114,7 +116,8 @@ class LicenseRepositoryImpl implements LicenseRepositoryInterface
             $row['status'],
             $row['activated_at'] ? new \DateTime($row['activated_at']) : null,
             new \DateTime($row['created_at']),
-            new \DateTime($row['updated_at'])
+            new \DateTime($row['updated_at']),
+            isset($row['seat_limit']) ? ($row['seat_limit'] === null ? null : (int)$row['seat_limit']) : null
         );
     }
 }

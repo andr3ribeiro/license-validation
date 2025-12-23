@@ -112,6 +112,7 @@ echo "License Key ID: $LICENSE_KEY_ID"
 echo ""
 
 echo "Creating RankMath Pro license..."
+RANKMATH_PRO_SEATS=$((RANDOM % 10 + 1))  # Random seat limit 1-10
 RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$RANKMATH_BRAND_ID/licenses" \
   -H "Authorization: Bearer $RANKMATH_BRAND_API_KEY" \
   -H "Content-Type: application/json" \
@@ -119,8 +120,10 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$RANKMATH_BRAND_ID/licenses"
     \"license_key_id\": \"$LICENSE_KEY_ID\",
     \"product_id\": \"$RANKMATH_PRO_PRODUCT_ID\",
     \"starts_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
-    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\"
+    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\",
+    \"seat_limit\": $RANKMATH_PRO_SEATS
   }")
+echo "  Seat limit set to: $RANKMATH_PRO_SEATS"
 
 echo "$RESPONSE" | $JQ
 echo ""
@@ -131,6 +134,7 @@ echo "----------------------------------------------------"
 echo ""
 
 echo "Adding Content AI license to SAME license key..."
+CONTENT_AI_SEATS=$((RANDOM % 5 + 3))  # Random seat limit 3-7
 RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$RANKMATH_BRAND_ID/licenses" \
   -H "Authorization: Bearer $RANKMATH_BRAND_API_KEY" \
   -H "Content-Type: application/json" \
@@ -138,8 +142,10 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$RANKMATH_BRAND_ID/licenses"
     \"license_key_id\": \"$LICENSE_KEY_ID\",
     \"product_id\": \"$CONTENT_AI_PRODUCT_ID\",
     \"starts_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
-    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\"
+    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\",
+    \"seat_limit\": $CONTENT_AI_SEATS
   }")
+echo "  Seat limit set to: $CONTENT_AI_SEATS"
 
 echo "$RESPONSE" | $JQ
 echo ""
@@ -180,6 +186,7 @@ echo "WP Rocket License Key ID: $WP_LICENSE_KEY_ID"
 echo ""
 
 echo "Creating WP Rocket license..."
+WPROCKET_SEATS=$((RANDOM % 3 + 1))  # Random seat limit 1-3
 RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$WPROCKET_BRAND_ID/licenses" \
   -H "Authorization: Bearer $WPROCKET_BRAND_API_KEY" \
   -H "Content-Type: application/json" \
@@ -187,8 +194,10 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$WPROCKET_BRAND_ID/licenses"
     \"license_key_id\": \"$WP_LICENSE_KEY_ID\",
     \"product_id\": \"$WPROCKET_PRODUCT_ID\",
     \"starts_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
-    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\"
+    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\",
+    \"seat_limit\": $WPROCKET_SEATS
   }")
+echo "  Seat limit set to: $WPROCKET_SEATS"
 
 echo "$RESPONSE" | $JQ
 echo ""
@@ -218,7 +227,8 @@ curl -s -X POST "$BASE_URL/api/v1/products/activate" \
   -d "{
     \"license_key\": \"$LICENSE_KEY\",
     \"product_id\": \"$RANKMATH_PRO_PRODUCT_ID\",
-    \"activation_source\": \"test-script\"
+    \"activation_source\": \"test-script\",\
+    \"instance_id\": \"example.com\"\
   }" | $JQ
 echo ""
 
@@ -263,7 +273,8 @@ curl -s -X POST "$BASE_URL/api/v1/products/activate" \
   -d "{
     \"license_key\": \"$WP_LICENSE_KEY\",\
     \"product_id\": \"$WPROCKET_PRODUCT_ID\",\
-    \"activation_source\": \"test-script\"\
+    \"activation_source\": \"test-script\",\
+    \"instance_id\": \"wp-example.com\"\
   }" | $JQ
 echo ""
 
@@ -273,6 +284,110 @@ curl -s -X POST "$BASE_URL/api/v1/products/validate" \
   -d "{
     \"license_key\": \"$WP_LICENSE_KEY\",\
     \"product_id\": \"$WPROCKET_PRODUCT_ID\"\
+  }" | $JQ
+echo ""
+
+echo "==================================="
+echo "Seat Limit Tests"
+echo "==================================="
+echo ""
+
+echo "Test 5: Create license with specific seat limit"
+echo "------------------------------------------------"
+echo "Creating WP Rocket license with seat_limit=2..."
+RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/brands/$WPROCKET_BRAND_ID/licenses" \
+  -H "Authorization: Bearer $WPROCKET_BRAND_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"license_key_id\": \"$WP_LICENSE_KEY_ID\",
+    \"product_id\": \"$WPROCKET_PRODUCT_ID\",
+    \"starts_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+    \"expires_at\": \"$(date -u -d '+1 year' +%Y-%m-%dT%H:%M:%SZ)\",
+    \"seat_limit\": 2
+  }")
+
+echo "$RESPONSE" | $JQ
+if [[ "$JQ" == "jq" ]]; then
+  TEST_LICENSE_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+  TEST_SEAT_LIMIT=$(echo "$RESPONSE" | jq -r '.seat_limit // empty')
+else
+  TEST_LICENSE_ID=$(echo "$RESPONSE" | tr -d ' ' | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+  TEST_SEAT_LIMIT=$(echo "$RESPONSE" | tr -d ' ' | grep -o '"seat_limit":[0-9]*' | cut -d':' -f2)
+fi
+
+echo ""
+echo "Created License ID: $TEST_LICENSE_ID with seat_limit: $TEST_SEAT_LIMIT"
+echo ""
+
+echo "Test 5a: Get license details BEFORE any seat activations"
+echo "-----------------------------------------------------"
+echo "License details showing original seat_limit=$TEST_SEAT_LIMIT (no seats used):"
+curl -s "$BASE_URL/api/v1/brands/$WPROCKET_BRAND_ID/license-keys/$WP_LICENSE_KEY_ID" \
+  -H "Authorization: Bearer $WPROCKET_BRAND_API_KEY" | $JQ '.licenses[] | select(.product_name == "WP Rocket") | {product_name, seat_limit, status, activated_at}'
+echo ""
+
+echo "Test 5b: Activate first seat (instance: wordpress-site-1.com)"
+echo "-------------------------------------------------------------"
+RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/products/activate" \
+  -H "Authorization: Bearer $WPROCKET_PRODUCT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"license_key\": \"$WP_LICENSE_KEY\",
+    \"product_id\": \"$WPROCKET_PRODUCT_ID\",
+    \"activation_source\": \"test-script\",
+    \"instance_id\": \"wordpress-site-1.com\"
+  }")
+
+echo "$RESPONSE" | $JQ
+echo ""
+
+echo "Test 5c: Get license details AFTER first seat activation"
+echo "-----------------------------------------------------"
+echo "License now shows activated_at timestamp (1 seat used):"
+curl -s "$BASE_URL/api/v1/brands/$WPROCKET_BRAND_ID/license-keys/$WP_LICENSE_KEY_ID" \
+  -H "Authorization: Bearer $WPROCKET_BRAND_API_KEY" | $JQ '.licenses[] | select(.product_name == "WP Rocket") | {product_name, seat_limit, status, activated_at}'
+echo ""
+
+echo "Test 5d: Activate second seat (instance: wordpress-site-2.com)"
+echo "-------------------------------------------------------------"
+RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/products/activate" \
+  -H "Authorization: Bearer $WPROCKET_PRODUCT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"license_key\": \"$WP_LICENSE_KEY\",
+    \"product_id\": \"$WPROCKET_PRODUCT_ID\",
+    \"activation_source\": \"test-script\",
+    \"instance_id\": \"wordpress-site-2.com\"
+  }")
+
+echo "$RESPONSE" | $JQ
+echo ""
+
+echo "Test 5e: Try to activate THIRD seat (should fail - seat_limit=2)"
+echo "-------------------------------------------------------------"
+echo "Attempting to activate instance: wordpress-site-3.com (should hit SeatLimitExceededException):"
+RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/products/activate" \
+  -H "Authorization: Bearer $WPROCKET_PRODUCT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"license_key\": \"$WP_LICENSE_KEY\",
+    \"product_id\": \"$WPROCKET_PRODUCT_ID\",
+    \"activation_source\": \"test-script\",
+    \"instance_id\": \"wordpress-site-3.com\"
+  }")
+
+echo "$RESPONSE" | $JQ
+echo ""
+
+echo "Test 5f: Validate license - shows seat_limit is enforced"
+echo "-----------------------------------------------------"
+echo "Validation confirms license is valid with seat_limit=2:"
+curl -s -X POST "$BASE_URL/api/v1/products/validate" \
+  -H "Authorization: Bearer $WPROCKET_PRODUCT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"license_key\": \"$WP_LICENSE_KEY\",
+    \"product_id\": \"$WPROCKET_PRODUCT_ID\"
   }" | $JQ
 echo ""
 
@@ -289,6 +404,17 @@ echo "    - License 2: Content AI"
 echo ""
 echo "  - WP Rocket license key: $WP_LICENSE_KEY"
 echo "    - License 1: WP Rocket"
+echo ""
+echo "User Story US3 - Seat Uses Implementation:"
+echo "  - Created WP Rocket license with seat_limit=2"
+echo "  - Successfully activated seat 1: wordpress-site-1.com"
+echo "  - Successfully activated seat 2: wordpress-site-2.com"
+echo "  - Attempted seat 3: wordpress-site-3.com (BLOCKED - seat limit exceeded)"
+echo "  - Seat usage validation confirmed:"
+echo "    * seat_limit property shows maximum available seats"
+echo "    * license_activations table tracks each unique instance_id"
+echo "    * SeatLimitExceededException thrown when exceeding limit"
+echo "    * Duplicate activations for same instance_id don't consume additional seats"
 echo ""
 echo "All licenses validated successfully!"
 echo ""

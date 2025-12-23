@@ -14,7 +14,7 @@ use App\Http\Controller;
 
 /**
  * Brand Provisioning API Controller
- * 
+ *
  * Handles license key and license creation for brands.
  * Requires Brand API Key authentication.
  */
@@ -73,7 +73,7 @@ class BrandController extends Controller
 
         try {
             $licenseKey = $this->licenseKeyService->createLicenseKey($brandId, $customerEmail);
-            
+
             $this->createdResponse([
                 'id' => $licenseKey->getId(),
                 'key' => $licenseKey->getKey(),
@@ -94,7 +94,7 @@ class BrandController extends Controller
     {
         $brandId = $this->getRouteParam('brandId');
         $licenseKeyId = $this->getRouteParam('licenseKeyId');
-        
+
         $this->validateBrandAccess($brandId);
 
         try {
@@ -136,6 +136,7 @@ class BrandController extends Controller
         $productId = $body['product_id'] ?? null;
         $startsAt = $body['starts_at'] ?? null;
         $expiresAt = $body['expires_at'] ?? null;
+        $seatLimit = $body['seat_limit'] ?? null;
 
         // Validate required fields
         if (!$licenseKeyId || !$productId || !$startsAt || !$expiresAt) {
@@ -152,12 +153,24 @@ class BrandController extends Controller
             return;
         }
 
+        if ($seatLimit !== null) {
+            if (!is_int($seatLimit) && !ctype_digit((string)$seatLimit)) {
+                $this->errorResponse('INVALID_SEAT_LIMIT', 'seat_limit must be an integer');
+                return;
+            }
+            $seatLimit = (int)$seatLimit;
+            if ($seatLimit <= 0) {
+                $seatLimit = null; // treat non-positive as unlimited
+            }
+        }
+
         try {
             $license = $this->licenseService->createLicense(
                 $licenseKeyId,
                 $productId,
                 $startsAtDt,
-                $expiresAtDt
+                $expiresAtDt,
+                $seatLimit
             );
 
             $this->createdResponse($license->toArray());
@@ -178,7 +191,7 @@ class BrandController extends Controller
     {
         $brandId = $this->getRouteParam('brandId');
         $licenseId = $this->getRouteParam('licenseId');
-        
+
         $this->validateBrandAccess($brandId);
 
         $body = $this->getJsonBody();
@@ -223,7 +236,7 @@ class BrandController extends Controller
     private function validateBrandAccess(string $brandId): void
     {
         $authenticatedBrandId = $this->authenticateBrand();
-        
+
         if ($authenticatedBrandId !== $brandId) {
             $this->errorResponse('FORBIDDEN', 'No access to this brand', 403);
             exit;

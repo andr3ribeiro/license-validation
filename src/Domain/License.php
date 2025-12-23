@@ -4,7 +4,7 @@ namespace App\Domain;
 
 /**
  * License - Represents an entitlement to a product
- * 
+ *
  * A license grants access to a specific product for a customer.
  * One license key can have multiple licenses (one per product).
  */
@@ -16,6 +16,7 @@ class License extends Entity
     private \DateTime $startsAt;
     private \DateTime $expiresAt;
     private ?\DateTime $activatedAt;
+    private ?int $seatLimit;
 
     public function __construct(
         string $id,
@@ -26,10 +27,11 @@ class License extends Entity
         string $status = 'valid',
         ?\DateTime $activatedAt = null,
         \DateTime $createdAt = new \DateTime(),
-        \DateTime $updatedAt = new \DateTime()
+        \DateTime $updatedAt = new \DateTime(),
+        ?int $seatLimit = null
     ) {
         parent::__construct($id, $createdAt, $updatedAt);
-        
+
         if ($expiresAt <= $startsAt) {
             throw new \InvalidArgumentException("Expiration date must be after start date");
         }
@@ -40,6 +42,7 @@ class License extends Entity
         $this->startsAt = $startsAt;
         $this->expiresAt = $expiresAt;
         $this->activatedAt = $activatedAt;
+        $this->seatLimit = $seatLimit;
     }
 
     public function getLicenseKeyId(): string
@@ -72,13 +75,18 @@ class License extends Entity
         return $this->activatedAt;
     }
 
+    public function getSeatLimit(): ?int
+    {
+        return $this->seatLimit;
+    }
+
     /**
      * Check if license is currently valid (not expired and active)
      */
     public function isValid(): bool
     {
         $now = new \DateTime();
-        
+
         if ($this->status !== 'valid') {
             return false;
         }
@@ -182,6 +190,7 @@ class License extends Entity
             'starts_at' => $this->startsAt->format(\DateTime::ISO8601),
             'expires_at' => $this->expiresAt->format(\DateTime::ISO8601),
             'activated_at' => $this->activatedAt?->format(\DateTime::ISO8601),
+            'seat_limit' => $this->seatLimit,
             'created_at' => $this->createdAt->format(\DateTime::ISO8601),
             'updated_at' => $this->updatedAt->format(\DateTime::ISO8601),
         ];

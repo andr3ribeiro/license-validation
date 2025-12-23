@@ -13,7 +13,8 @@ use App\Domain\{
     Product,
     ProductNotFoundException,
     UnauthorizedException,
-    DuplicateLicenseException
+    DuplicateLicenseException,
+    SeatLimitExceededException
 };
 use App\Infrastructure\IdGenerator;
 use App\Infrastructure\Repository\{
@@ -22,10 +23,11 @@ use App\Infrastructure\Repository\{
     LicenseRepository,
     ProductRepository
 };
+use App\Infrastructure\Database;
 
 /**
  * Service for managing licenses
- * 
+ *
  * Orchestrates license provisioning, validation, and lifecycle management.
  */
 class LicenseService
@@ -49,7 +51,7 @@ class LicenseService
 
     /**
      * Create a new license and associate it with a license key
-     * 
+     *
      * @throws BrandNotFoundException
      * @throws ProductNotFoundException
      * @throws LicenseKeyNotFoundException
@@ -59,7 +61,8 @@ class LicenseService
         string $licenseKeyId,
         string $productId,
         \DateTime $startsAt,
-        \DateTime $expiresAt
+        \DateTime $expiresAt,
+        ?int $seatLimit = null
     ): License {
         // Validate license key exists
         $licenseKey = $this->licenseKeyRepo->findById($licenseKeyId);
@@ -90,7 +93,12 @@ class LicenseService
             $licenseKeyId,
             $productId,
             $startsAt,
-            $expiresAt
+            $expiresAt,
+            'valid',
+            null,
+            new \DateTime(),
+            new \DateTime(),
+            $seatLimit
         );
 
         // Persist
@@ -108,14 +116,89 @@ class LicenseService
     }
 
     /**
+     * Record an activation for a license instance (domain) with optional seat limit enforcement.
+     * If the license is not yet activated, mark activated_at.
+     *
+     * @throws LicenseNotFoundException
+     * @throws SeatLimitExceededException
+     */
+    public function recordActivation(
+        string $licenseId,
+        string $instanceId,
+        string $activationSource = 'unknown',
+        array $metadata = [],
+        ?string $userAgent = null,
+        ?string $ipAddress = null
+    ): \DateTime {
+        $license = $this->licenseRepo->findById($licenseId);
+        if ($license === null) {
+            throw new LicenseNotFoundException("License not found: $licenseId");
+        }
+
+        $db = Database::getInstance();
+
+        $alreadyActivated = $db->query(
+            "SELECT id FROM license_activations WHERE license_id = :license_id AND instance_id = :instance_id LIMIT 1",
+            [
+                ':license_id' => $licenseId,
+                ':instance_id' => $instanceId,
+            ]
+        )->fetch();
+
+        if (!$alreadyActivated && $license->getSeatLimit() !== null && $license->getSeatLimit() > 0) {
+            $countRow = $db->query(
+                "SELECT COUNT(DISTINCT instance_id) AS c FROM license_activations WHERE license_id = :license_id",
+                [':license_id' => $licenseId]
+            )->fetch();
+            $currentSeats = (int)($countRow['c'] ?? 0);
+            if ($currentSeats >= $license->getSeatLimit()) {
+                throw new SeatLimitExceededException("Seat limit reached for this license");
+            }
+        }
+
+        $now = new \DateTime();
+
+        // Upsert activation record to avoid duplicate seats for same instance
+        $db->query(
+            "INSERT INTO license_activations (id, license_id, instance_id, activated_at, user_agent, ip_address, activation_source, metadata, created_at)
+             VALUES (:id, :license_id, :instance_id, :activated_at, :user_agent, :ip_address, :activation_source, :metadata, :created_at)
+             ON DUPLICATE KEY UPDATE
+                activated_at = VALUES(activated_at),
+                user_agent = VALUES(user_agent),
+                ip_address = VALUES(ip_address),
+                activation_source = VALUES(activation_source),
+                metadata = VALUES(metadata)",
+            [
+                ':id' => IdGenerator::generateUuid(),
+                ':license_id' => $licenseId,
+                ':instance_id' => $instanceId,
+                ':activated_at' => $now->format('Y-m-d H:i:s'),
+                ':user_agent' => $userAgent,
+                ':ip_address' => $ipAddress,
+                ':activation_source' => $activationSource,
+                ':metadata' => json_encode($metadata),
+                ':created_at' => $now->format('Y-m-d H:i:s'),
+            ]
+        );
+
+        // Only mark the license activated the first time
+        if ($license->canActivate()) {
+            $license->activate();
+            $this->licenseRepo->save($license);
+        }
+
+        return $now;
+    }
+
+    /**
      * Get all licenses for a license key (with product details)
-     * 
+     *
      * @return array Array of licenses with associated product information
      */
     public function getLicensesByKey(string $licenseKeyId): array
     {
         $licenses = $this->licenseRepo->findByLicenseKeyId($licenseKeyId);
-        
+
         return array_map(function(License $license) {
             $product = $this->productRepo->findById($license->getProductId());
             return [
@@ -132,7 +215,7 @@ class LicenseService
 
     /**
      * Validate a license by license key and product ID
-     * 
+     *
      * Returns license details if valid, null if not found or invalid
      */
     public function validateLicense(string $licenseKey, string $productId): ?array
@@ -161,14 +244,15 @@ class LicenseService
             'status' => $license->getStatus(),
             'expires_at' => $license->getExpiresAt()->format(\DateTime::ISO8601),
             'activated_at' => $license->getActivatedAt()?->format(\DateTime::ISO8601),
+            'seat_limit' => $license->getSeatLimit(),
         ];
     }
 
     /**
      * Activate a license
-     * 
+     *
      * Called when a product validates and activates a license for the first time.
-     * 
+     *
      * @throws LicenseNotFoundException
      */
     public function activateLicense(string $licenseId): void
@@ -234,7 +318,7 @@ class LicenseService
     public function markExpiredLicenses(): int
     {
         $expired = $this->licenseRepo->findExpired();
-        
+
         foreach ($expired as $license) {
             $license->markExpired();
             $this->licenseRepo->save($license);

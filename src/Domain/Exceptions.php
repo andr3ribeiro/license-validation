@@ -37,3 +37,7 @@ class InvalidBrandException extends \DomainException
 class UnauthorizedException extends \DomainException
 {
 }
+
+class SeatLimitExceededException extends \DomainException
+{
+}

@@ -557,9 +557,23 @@ Brand: WP Rocket
 
 ## Future Extensibility
 
+### Implemented Features (Previously Planned)
+
+#### User Story 3: End-user activation with seats - IMPLEMENTED
+- End-user product can activate a license for a specific instance (e.g., website domain), supplying instance metadata.
+- Each license may define a seat limit; activation consumes a seat until released or expired.
+- Enforce seat limits by rejecting activations when the limit is reached for the license.
+- Data model: `seat_limit` added to licenses; activations per instance tracked in `license_activations` table with uniqueness on (license_id, instance_id).
+- API: `POST /api/v1/products/activate` accepts instance identifier (instance_id) and enforces seat limits; throws `SeatLimitExceededException` when limit exceeded.
+- Implementation details:
+  - `seat_limit` stored as nullable integer in licenses table
+  - `license_activations` table with UNIQUE constraint on (license_id, instance_id)
+  - Duplicate activations for same instance are idempotent (upsert behavior)
+  - Seat counting logic counts DISTINCT instance_ids per license
+
 ### Planned Features (Designed but not implemented)
 
-#### 1. **Seat Management**
+#### 1. **Advanced Seat Management**
 ```
 Seat (future)
 ├── id: UUID
@@ -640,6 +654,6 @@ This design provides:
 
 **Trade-offs made:**
 - Separate API keys for brands/products (simpler than role-based access)
-- No built-in seat management (designed, not implemented - can add later)
+- Seat management implemented with simple instance-based tracking (can be extended with user-to-seat assignments)
 - Synchronous APIs (good for licensing, easier to implement; async webhooks future)
 - Simple key generation (not optimized for compliance with specific enterprise requirements)

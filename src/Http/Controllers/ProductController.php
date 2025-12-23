@@ -11,7 +11,7 @@ use App\Http\Controller;
 
 /**
  * Product API Controller
- * 
+ *
  * Handles license validation and activation for products.
  * Requires Product API Key authentication.
  */
@@ -54,7 +54,7 @@ class ProductController extends Controller
     /**
      * POST /api/v1/products/validate
      * Validate a license key for a specific product
-     * 
+     *
      * Returns 200 if valid, 404 if not found/invalid
      */
     public function validateLicense(): void
@@ -96,19 +96,25 @@ class ProductController extends Controller
         $productId = $body['product_id'] ?? null;
         $activationSource = $body['activation_source'] ?? 'unknown';
         $metadata = $body['metadata'] ?? [];
+        $instanceId = $body['instance_id'] ?? null; // e.g., website domain
 
         if (!$licenseKey || !$productId) {
             $this->errorResponse('INVALID_REQUEST', 'Missing license_key or product_id');
             return;
         }
 
+        if (!$instanceId || !is_string($instanceId)) {
+            $this->errorResponse('INVALID_REQUEST', 'Missing or invalid instance_id');
+            return;
+        }
+
         try {
             // Find license key
             $key = $this->licenseKeyService->getLicenseKeyByString($licenseKey);
-            
+
             // Validate the license exists and is valid
             $result = $this->licenseService->validateLicense($licenseKey, $productId);
-            
+
             if ($result === null) {
                 $this->jsonResponse([
                     'activated' => false,
@@ -117,19 +123,28 @@ class ProductController extends Controller
                 return;
             }
 
-            // Activate the license
-            $this->licenseService->activateLicense($result['license_id']);
+            $activatedAt = $this->licenseService->recordActivation(
+                $result['license_id'],
+                $instanceId,
+                $activationSource,
+                is_array($metadata) ? $metadata : [],
+                $_SERVER['HTTP_USER_AGENT'] ?? null,
+                $_SERVER['REMOTE_ADDR'] ?? null
+            );
 
             $this->jsonResponse([
                 'activated' => true,
                 'license_id' => $result['license_id'],
-                'activated_at' => (new \DateTime())->format(\DateTime::ISO8601)
+                'activated_at' => $activatedAt->format(\DateTime::ISO8601),
+                'instance_id' => $instanceId
             ]);
         } catch (LicenseKeyNotFoundException $e) {
             $this->jsonResponse([
                 'activated' => false,
                 'message' => 'License key not found'
             ], 404);
+        } catch (\App\Domain\SeatLimitExceededException $e) {
+            $this->errorResponse('SEAT_LIMIT_REACHED', $e->getMessage(), 409);
         } catch (\Exception $e) {
             $this->errorResponse('ERROR', $e->getMessage(), 400);
         }
